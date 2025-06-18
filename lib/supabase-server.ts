@@ -6,8 +6,6 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 // Server-side Supabase client
 export const createServerSupabaseClient = async () => {
-  console.log('supabaseUrl', supabaseUrl)
-  console.log('supabaseAnonKey', supabaseAnonKey)
   const cookieStore = await cookies()
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {

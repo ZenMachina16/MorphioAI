@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { NextRequest, NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import * as cheerio from 'cheerio'
@@ -7,14 +7,35 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
 })
 
+type Platform = 'twitter' | 'linkedin' | 'instagram'
+
+interface RepurposeResponse {
+  inputType: string
+  targetPlatforms: string[]
+  twitterPosts?: string[]
+  linkedinPost?: string
+  instagramCaption?: string
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Verify user authentication
-    const supabase = createServerSupabaseClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // Get authenticated user's session using createServerSupabaseClient
+    const supabase = await createServerSupabaseClient()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     
-    if (authError || !user) {
+    // If no user session, return 401 Unauthorized
+    if (sessionError || !session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const user = session.user
+
+    // Read JSON body from request
+    const body = await request.json()
+    const { text, url, inputType } = body
+
+    if (!inputType) {
+      return NextResponse.json({ error: 'Input type is required' }, { status: 400 })
     }
 
     // Get user profile and check subscription status
@@ -35,12 +56,6 @@ export async function POST(request: NextRequest) {
           usage_count: 0,
         })
     }
-
-    // For now, we'll allow usage regardless of subscription status
-    // In production, you'd check subscription_status and usage_count here
-
-    const body = await request.json()
-    const { text, url } = body
 
     let contentToRepurpose = text
 
@@ -72,89 +87,132 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No content provided' }, { status: 400 })
     }
 
-    // Create parallel OpenAI requests for different platforms
-    const [xPostsResult, linkedinResult, instagramResult] = await Promise.all([
-      // X (Twitter) Posts - Create multiple short posts
-      openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a social media expert specializing in X (Twitter) content. Create 3-5 engaging Twitter posts from the given content. Each post should:
-            - Be under 280 characters
-            - Include relevant hashtags (2-3 max)
-            - Be engaging and conversational
-            - Extract key insights or quotes
-            - Use emojis sparingly but effectively
-            Return only the posts, separated by "---"`
-          },
-          {
-            role: 'user',
-            content: contentToRepurpose
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-      }),
+    // Define conversion logic based on input type
+    const conversionMap: Record<string, Platform[]> = {
+      'youtube-transcript': ['twitter', 'linkedin', 'instagram'],
+      'linkedin-post': ['twitter', 'instagram'],
+      'twitter-post': ['linkedin', 'instagram'],
+      'instagram-post': ['linkedin', 'twitter'],
+      'blog-article': ['twitter', 'linkedin', 'instagram'],
+      'general-content': ['twitter', 'linkedin', 'instagram']
+    }
 
-      // LinkedIn Post
-      openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a LinkedIn content specialist. Transform the given content into a professional LinkedIn post that:
-            - Is 1300-3000 characters long
-            - Uses a professional but engaging tone
-            - Includes 3-5 relevant hashtags at the end
-            - Has a clear hook in the first line
-            - Provides value and insights
-            - Encourages engagement with a question or call-to-action
-            - Uses line breaks for readability`
-          },
-          {
-            role: 'user',
-            content: contentToRepurpose
-          }
-        ],
-        max_tokens: 1500,
-        temperature: 0.7,
-      }),
+    const targetPlatforms = conversionMap[inputType] || ['twitter', 'linkedin', 'instagram']
 
-      // Instagram Caption
-      openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an Instagram content creator. Transform the given content into an engaging Instagram caption that:
-            - Is visually appealing with line breaks and spacing
-            - Uses emojis throughout to break up text
-            - Includes 5-10 relevant hashtags at the end
-            - Has a conversational, authentic tone
-            - Tells a story or shares insights
-            - Encourages engagement with questions
-            - Is around 300-1000 characters`
-          },
-          {
-            role: 'user',
-            content: contentToRepurpose
-          }
-        ],
-        max_tokens: 1200,
-        temperature: 0.7,
-      }),
-    ])
+    // Create platform-specific prompts
+    const prompts: Promise<OpenAI.Chat.Completions.ChatCompletion>[] = []
+    const platformNames: Platform[] = []
 
-    // Process X posts (split by separator)
-    const xPostsContent = xPostsResult.choices[0]?.message?.content || ''
-    const xPosts = xPostsContent.split('---').map(post => post.trim()).filter(post => post.length > 0)
+    if (targetPlatforms.includes('twitter')) {
+      platformNames.push('twitter')
+      prompts.push(
+        openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a social media expert specializing in X (Twitter) content. Transform the given ${inputType.replace('-', ' ')} into 3 engaging Twitter posts. Each post should:
+              - Be under 280 characters
+              - Include relevant hashtags (2-3 max)
+              - Be engaging and conversational
+              - Extract key insights or quotes from the original content
+              - Use emojis sparingly but effectively
+              - Maintain the core message while adapting to Twitter's format
+              Return only the posts, separated by "---"`
+            },
+            {
+              role: 'user',
+              content: contentToRepurpose
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7,
+        })
+      )
+    }
 
-    // Get LinkedIn and Instagram content
-    const linkedinPost = linkedinResult.choices[0]?.message?.content || ''
-    const instagramCaption = instagramResult.choices[0]?.message?.content || ''
+    if (targetPlatforms.includes('linkedin')) {
+      platformNames.push('linkedin')
+      prompts.push(
+        openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a LinkedIn content specialist. Transform the given ${inputType.replace('-', ' ')} into a professional LinkedIn post that:
+              - Is 1300-3000 characters long
+              - Uses a professional but engaging tone
+              - Includes 3-5 relevant hashtags at the end
+              - Has a clear hook in the first line
+              - Provides value and professional insights
+              - Encourages engagement with a thoughtful question or call-to-action
+              - Uses line breaks for readability
+              - Adapts the original content for a professional audience`
+            },
+            {
+              role: 'user',
+              content: contentToRepurpose
+            }
+          ],
+          max_tokens: 1500,
+          temperature: 0.7,
+        })
+      )
+    }
 
-    // Update usage count (optional - for tracking)
+    if (targetPlatforms.includes('instagram')) {
+      platformNames.push('instagram')
+      prompts.push(
+        openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an Instagram content creator. Transform the given ${inputType.replace('-', ' ')} into an engaging Instagram caption that:
+              - Is visually appealing with line breaks and spacing
+              - Uses emojis throughout to break up text and add visual interest
+              - Includes 5-10 relevant hashtags at the end
+              - Has a conversational, authentic tone
+              - Tells a story or shares insights in an engaging way
+              - Encourages engagement with questions
+              - Is around 300-1000 characters
+              - Adapts the content for Instagram's visual and community-focused platform`
+            },
+            {
+              role: 'user',
+              content: contentToRepurpose
+            }
+          ],
+          max_tokens: 1200,
+          temperature: 0.7,
+        })
+      )
+    }
+
+    // Run all prompts in parallel using Promise.all
+    const results = await Promise.all(prompts)
+
+    // Structure the response based on generated platforms
+    const response: RepurposeResponse = { 
+      inputType, 
+      targetPlatforms: targetPlatforms as string[] 
+    }
+
+    results.forEach((result, index) => {
+      const platform = platformNames[index]
+      const content = result.choices[0]?.message?.content || ''
+
+      if (platform === 'twitter') {
+        // Split Twitter posts by separator
+        response.twitterPosts = content.split('---').map(post => post.trim()).filter(post => post.length > 0)
+      } else if (platform === 'linkedin') {
+        response.linkedinPost = content
+      } else if (platform === 'instagram') {
+        response.instagramCaption = content
+      }
+    })
+
+    // Update usage count
     if (profile) {
       await supabase
         .from('profiles')
@@ -162,11 +220,7 @@ export async function POST(request: NextRequest) {
         .eq('id', user.id)
     }
 
-    return NextResponse.json({
-      xPosts,
-      linkedinPost,
-      instagramCaption,
-    })
+    return NextResponse.json(response)
 
   } catch (error) {
     console.error('Error in repurpose API:', error)

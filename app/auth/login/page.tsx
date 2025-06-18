@@ -44,6 +44,9 @@ export default function LoginPage() {
     setError('')
 
     try {
+      console.log('Starting Google OAuth flow...')
+      console.log('Redirect URL will be:', `${window.location.origin}/auth/callback`)
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -52,10 +55,14 @@ export default function LoginPage() {
       })
 
       if (error) {
-        setError(error.message)
+        console.error('Google OAuth error:', error)
+        setError(`Google OAuth error: ${error.message}`)
+      } else {
+        console.log('Google OAuth initiated successfully')
       }
     } catch (err) {
-      setError('An unexpected error occurred')
+      console.error('Unexpected error during Google OAuth:', err)
+      setError('An unexpected error occurred during Google sign-in')
     } finally {
       setIsLoading(false)
     }
