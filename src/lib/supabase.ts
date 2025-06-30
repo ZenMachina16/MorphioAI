@@ -11,6 +11,7 @@ export interface User {
   email: string
   name: string
   image?: string
+  password?: string
   plan: 'hobby' | 'pro'
   jobs_this_month: number
   created_at: string
