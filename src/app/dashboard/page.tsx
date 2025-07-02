@@ -103,7 +103,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0e1014]">
       {/* Header */}
       <Header />
 
@@ -111,11 +111,11 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <div className="bg-[#181a1f] rounded-lg shadow-sm p-6 border border-gray-700">
+            <h2 className="text-3xl font-bold text-gray-200 mb-4">
               Welcome {session.user?.name}!
             </h2>
-            <p className="text-lg text-gray-600 mb-6">
+            <p className="text-lg text-gray-300 mb-6">
               Transform your content for multiple social media platforms using AI. 
               Paste your YouTube transcript, blog post, or any content below.
             </p>
@@ -123,13 +123,13 @@ export default function Dashboard() {
         </div>
 
         {/* Content Repurposing Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <h3 className="text-xl font-semibold text-gray-900 mb-6">Content Repurposer</h3>
+        <div className="bg-[#181a1f] rounded-lg shadow-sm p-6 mb-8 border border-gray-700">
+          <h3 className="text-xl font-semibold text-gray-200 mb-6">MorphioAI</h3>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Content Input */}
             <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="content" className="block text-sm font-medium text-gray-200 mb-2">
                 Original Content
               </label>
               <textarea
@@ -137,17 +137,17 @@ export default function Dashboard() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Paste your YouTube transcript, blog post, articles, or any content here... No character limits!"
-                className="w-full h-64 p-4 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full h-64 p-4 bg-[#0e1014] border border-gray-600 rounded-lg resize-y focus:ring-2 focus:ring-[#6366f1] focus:border-transparent text-gray-200 placeholder-gray-400"
                 disabled={isGenerating}
               />
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-400 mt-1">
                 {content.length} characters • No limits - paste as much content as needed
               </p>
             </div>
 
             {/* Platform Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-200 mb-3">
                 Select Platforms
               </label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -156,8 +156,8 @@ export default function Dashboard() {
                     key={platform.id}
                     className={`relative cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
                       selectedPlatforms.includes(platform.id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#6366f1] bg-[#6366f1]/10'
+                        : 'border-gray-600 hover:border-gray-500'
                     }`}
                     onClick={() => handlePlatformToggle(platform.id)}
                   >
@@ -166,12 +166,12 @@ export default function Dashboard() {
                         type="checkbox"
                         checked={selectedPlatforms.includes(platform.id)}
                         onChange={() => handlePlatformToggle(platform.id)}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-[#6366f1] focus:ring-[#6366f1] border-gray-600 rounded bg-[#0e1014]"
                         disabled={isGenerating}
                       />
                       <div className="ml-3 flex items-center">
                         <span className="text-2xl mr-2">{platform.icon}</span>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-200">
                           {platform.name}
                         </span>
                       </div>
@@ -183,8 +183,8 @@ export default function Dashboard() {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800">{error}</p>
+              <div className="bg-[#e11d48]/10 border border-[#e11d48]/30 rounded-lg p-4">
+                <p className="text-[#e11d48]">{error}</p>
               </div>
             )}
 
@@ -193,7 +193,7 @@ export default function Dashboard() {
               <button
                 type="submit"
                 disabled={isGenerating || !content.trim() || selectedPlatforms.length === 0}
-                className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                className="inline-flex items-center px-6 py-3 bg-[#6366f1] text-white font-medium rounded-lg hover:bg-[#5855eb] focus:outline-none focus:ring-2 focus:ring-[#6366f1] focus:ring-offset-2 focus:ring-offset-[#0e1014] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
                 {isGenerating ? (
                   <>
@@ -214,21 +214,21 @@ export default function Dashboard() {
         {/* Results Section */}
         {results && (
           <div className="space-y-6">
-            <h3 className="text-xl font-semibold text-gray-900">Generated Content</h3>
+            <h3 className="text-xl font-semibold text-gray-200">Generated Content</h3>
             {Object.entries(results).map(([platform, content]) => {
               const platformInfo = platforms.find(p => p.id === platform)
               return (
-                <div key={platform} className="bg-white rounded-lg shadow-sm p-6">
+                <div key={platform} className="bg-[#181a1f] rounded-lg shadow-sm p-6 border border-gray-700">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       <span className="text-2xl mr-2">{platformInfo?.icon}</span>
-                      <h4 className="text-lg font-semibold text-gray-900">
+                      <h4 className="text-lg font-semibold text-gray-200">
                         {platformInfo?.name}
                       </h4>
                     </div>
                     <button
                       onClick={() => copyToClipboard(content)}
-                      className="inline-flex items-center px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200"
+                      className="inline-flex items-center px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition-colors duration-200"
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -236,10 +236,10 @@ export default function Dashboard() {
                       Copy
                     </button>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-800 whitespace-pre-wrap">{content}</p>
+                  <div className="bg-[#0e1014] rounded-lg p-4 border border-gray-700">
+                    <p className="text-gray-200 whitespace-pre-wrap">{content}</p>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">
+                  <p className="text-sm text-gray-400 mt-2">
                     {content.length} characters
                   </p>
                 </div>
@@ -250,44 +250,44 @@ export default function Dashboard() {
 
         {/* Feature Overview */}
         <div className="mt-12 grid md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
-                <div className="flex items-center mb-4">
-                  <div className="bg-blue-500 rounded-lg p-2 mr-3">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-              <h3 className="text-lg font-semibold text-blue-900">Smart Adaptation</h3>
-                </div>
-                <p className="text-blue-800">
+          <div className="bg-gradient-to-br from-[#6366f1]/20 to-[#6366f1]/10 rounded-lg p-6 border border-[#6366f1]/30">
+            <div className="flex items-center mb-4">
+              <div className="bg-[#6366f1] rounded-lg p-2 mr-3">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white">Smart Adaptation</h3>
+            </div>
+            <p className="text-gray-300">
               AI automatically adapts your content's tone, length, and style for each platform's unique audience.
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+          <div className="bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-lg p-6 border border-green-500/30">
                 <div className="flex items-center mb-4">
                   <div className="bg-green-500 rounded-lg p-2 mr-3">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
-              <h3 className="text-lg font-semibold text-green-900">Mistral 7B Powered</h3>
+              <h3 className="text-lg font-semibold text-white">Mistral 7B Powered</h3>
                 </div>
-                <p className="text-green-800">
+            <p className="text-gray-300">
               Powered by advanced Mistral 7B language model for high-quality, contextually aware content generation.
                 </p>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
+          <div className="bg-gradient-to-br from-[#e11d48]/20 to-[#e11d48]/10 rounded-lg p-6 border border-[#e11d48]/30">
                 <div className="flex items-center mb-4">
-                  <div className="bg-purple-500 rounded-lg p-2 mr-3">
+              <div className="bg-[#e11d48] rounded-lg p-2 mr-3">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
-                  </div>
-              <h3 className="text-lg font-semibold text-purple-900">One-Click Copy</h3>
+              </div>
+              <h3 className="text-lg font-semibold text-white">One-Click Copy</h3>
             </div>
-            <p className="text-purple-800">
+            <p className="text-gray-300">
               Easily copy generated content with one click and paste directly into your social media platforms.
             </p>
           </div>

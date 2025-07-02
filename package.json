@@ -1,6 +1,7 @@
 {
-  "name": "content-repurposer",
+  "name": "morphio-ai",
   "version": "0.1.0",
+  "description": "AI-powered content repurposing platform for social media",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -9,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@huggingface/inference": "^4.3.0",
     "@next-auth/supabase-adapter": "^0.2.1",
     "@supabase/supabase-js": "^2.50.1",
     "@types/bcryptjs": "^2.4.6",
@@ -17,14 +19,16 @@
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
+    "framer-motion": "^12.23.0",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.3.29",
+    "lottie-react": "^2.4.1",
     "next": "15.3.4",
     "next-auth": "^4.24.11",
-    "openai": "^5.8.2",
     "postcss": "^8.5.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

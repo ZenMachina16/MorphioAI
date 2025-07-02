@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const HUGGINGFACE_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
+import { InferenceClient } from "@huggingface/inference"
 
 interface RepurposeRequest {
   content: string
@@ -35,87 +34,81 @@ async function generateContent(content: string, platform: string): Promise<strin
     throw new Error(`Unsupported platform: ${platform}`)
   }
 
-  // Format the prompt using Mistral's instruction format: [INST] ... [/INST]
-  const prompt = `[INST] ${platformConfig.systemPrompt}
-
-${platformConfig.instruction}
-
-Original content:
-${content}
-
-Please provide the transformed content for ${platform}: [/INST]`
+  // Initialize the Hugging Face client
+  const client = new InferenceClient(process.env.HF_TOKEN)
 
   try {
     console.log(`Calling Hugging Face API for ${platform}...`)
     
-    const response = await fetch(HUGGINGFACE_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUGGINGFACEHUB_API_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 500,
-          temperature: 0.7,
-          do_sample: true,
-          return_full_text: false,
-          stop: ["[INST]", "[/INST]", "</s>"]
+    const chatCompletion = await client.chatCompletion({
+      provider: "featherless-ai",
+      model: "microsoft/DialoGPT-medium",
+      messages: [
+        {
+          role: "system",
+          content: platformConfig.systemPrompt
         },
-        options: {
-          wait_for_model: true,
-          use_cache: false
+        {
+          role: "user",
+          content: `${platformConfig.instruction}
+
+Original content:
+${content}
+
+Please provide the transformed content for ${platform}:`
         }
-      })
+      ],
+      max_tokens: 500,
+      temperature: 0.7
     })
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error(`Hugging Face API error: ${response.status} - ${errorText}`)
-      throw new Error(`Hugging Face API error: ${response.status} - ${errorText}`)
-    }
-
-    const result = await response.json()
-    console.log(`Raw API response for ${platform}:`, JSON.stringify(result, null, 2))
+    const generatedText = chatCompletion.choices[0]?.message?.content || ''
     
-    if (result.error) {
-      console.error(`Hugging Face API error:`, result.error)
-      throw new Error(`Hugging Face API error: ${result.error}`)
-    }
-
-    let generatedText = ''
-    
-    // Handle different response formats from Hugging Face
-    if (Array.isArray(result)) {
-      generatedText = result[0]?.generated_text || ''
-    } else if (result.generated_text) {
-      generatedText = result.generated_text
-    } else if (typeof result === 'string') {
-      generatedText = result
-    } else {
-      console.error('Unexpected response format:', result)
-      throw new Error('Unexpected response format from Hugging Face API')
-    }
-    
-    // Clean up the generated text
-    generatedText = generatedText.trim()
-    
-    // Remove any instruction formatting that might remain
-    generatedText = generatedText.replace(/\[INST\].*?\[\/INST\]/gs, '').trim()
-    generatedText = generatedText.replace(/^(Generated content:|Transformed content:|Content for|Response:)/gm, '').trim()
-    
-    // If the text is empty, provide a fallback
-    if (!generatedText) {
-      throw new Error('Empty response from Mistral model')
+    if (!generatedText.trim()) {
+      throw new Error('Empty response from model')
     }
 
     console.log(`Generated content for ${platform}:`, generatedText)
-    return generatedText
+    return generatedText.trim()
 
   } catch (error) {
     console.error(`Error generating content for ${platform}:`, error)
+    
+    // Fallback to a simpler approach if the API fails
+    if (error instanceof Error && error.message.includes('paused')) {
+      console.log(`Falling back to simple transformation for ${platform}`)
+      return generateFallbackContent(content, platform)
+    }
+    
     throw error
+  }
+}
+
+function generateFallbackContent(content: string, platform: string): string {
+  const platformConfig = platformPrompts[platform]
+  
+  // Simple fallback transformations
+  switch (platform) {
+    case 'twitter':
+      const twitterContent = content.length > 240 ? content.substring(0, 240) + '...' : content
+      return `${twitterContent} #AI #ContentCreation #SocialMedia`
+    
+    case 'linkedin':
+      return `🚀 ${content}
+
+What are your thoughts on this? Share your experience in the comments below!
+
+#LinkedIn #ProfessionalGrowth #ContentStrategy`
+    
+    case 'instagram':
+      return `✨ ${content}
+
+What do you think? Let me know in the comments! 👇
+
+#Instagram #Content #Inspiration #CreativeContent`
+    
+    default:
+      return content
   }
 }
 
@@ -140,10 +133,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!process.env.HUGGINGFACEHUB_API_TOKEN) {
+    if (!process.env.HF_TOKEN) {
       console.error('Hugging Face API token not configured')
       return NextResponse.json(
-        { error: 'Hugging Face API token not configured. Please add HUGGINGFACEHUB_API_TOKEN to your environment variables.' },
+        { error: 'Hugging Face API token not configured. Please add HF_TOKEN to your environment variables.' },
         { status: 500 }
       )
     }
@@ -160,7 +153,14 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error(`Failed to generate content for ${platform}:`, error)
         errors[platform] = error instanceof Error ? error.message : 'Unknown error occurred'
-        results[platform] = `Error: ${errors[platform]}`
+        
+        // Use fallback content if API fails
+        try {
+          results[platform] = generateFallbackContent(content, platform)
+          console.log(`Used fallback content for ${platform}`)
+        } catch (fallbackError) {
+          results[platform] = `Error: ${errors[platform]}`
+        }
       }
     }
 
