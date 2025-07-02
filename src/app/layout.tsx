@@ -14,20 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MorphioAI",
-  description: "Repurpose smarter, grow faster. MorphioAI turns one piece of content into an audience across platforms.",
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
-  },
-  keywords: ['AI', 'content repurposing', 'social media', 'content creation', 'marketing automation'],
-  authors: [{ name: 'MorphioAI Team' }],
-  openGraph: {
-    title: 'MorphioAI',
-    description: 'Repurpose smarter, grow faster. Transform your content across all social media platforms with AI.',
-    type: 'website',
-  },
+  title: "Content Repurposer",
+  description: "Transform your content for multiple social media platforms",
 };
 
 export default function RootLayout({
@@ -40,7 +28,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SessionProvider>
+        <SessionProvider session={null}>
           {children}
         </SessionProvider>
       </body>
