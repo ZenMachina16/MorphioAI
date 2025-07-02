@@ -1,4 +1,4 @@
-# Content Repurposer Setup Guide
+# MorphioAI Setup Guide
 
 ## Environment Variables
 

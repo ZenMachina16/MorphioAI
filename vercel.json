@@ -1,6 +1,6 @@
 {
   "name": "morphio-ai",
-  "buildCommand": "pnpm build",
-  "devCommand": "pnpm dev",
-  "installCommand": "pnpm install"
+  "buildCommand": "cd content-repurposer && pnpm build",
+  "devCommand": "cd content-repurposer && pnpm dev",
+  "installCommand": "cd content-repurposer && pnpm install"
 } 

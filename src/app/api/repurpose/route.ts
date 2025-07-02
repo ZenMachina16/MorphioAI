@@ -75,7 +75,7 @@ Please provide the transformed content for ${platform}:`
     console.error(`Error generating content for ${platform}:`, error)
     
     // Fallback to a simpler approach if the API fails
-    if (error instanceof Error && error.message.includes('paused')) {
+    if (error instanceof Error && (error.message.includes('paused') || error.message.includes('400') || error.message.includes('503'))) {
       console.log(`Falling back to simple transformation for ${platform}`)
       return generateFallbackContent(content, platform)
     }
@@ -85,8 +85,6 @@ Please provide the transformed content for ${platform}:`
 }
 
 function generateFallbackContent(content: string, platform: string): string {
-  const platformConfig = platformPrompts[platform]
-  
   // Simple fallback transformations
   switch (platform) {
     case 'twitter':
