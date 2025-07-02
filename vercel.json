@@ -2,5 +2,10 @@
   "name": "morphio-ai",
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
-  "installCommand": "pnpm install"
-} 
+  "installCommand": "pnpm install",
+  "build": {
+    "env": {
+      "NPM_CONFIG_FROZEN_LOCKFILE": "false"
+    }
+  }
+}
