@@ -131,10 +131,13 @@ export default function ContentSplitAnimation() {
         if (animationState === 'orbit' || animationState === 'settle') {
           pos = polarToXY(platform.orbit.r, platform.orbit.angle)
         }
-        // Animate float/wobble
+        // Animate float/wobble - combine base position with float offset
         const floatAnim = animationState === 'settle'
-          ? { rotateZ: [0, 5, -5, 0], y: [0, -18, 0, 18, 0] }
-          : { rotateZ: 0, y: 0 }
+          ? { 
+              rotateZ: [0, 5, -5, 0], 
+              y: [pos.y, pos.y - 18, pos.y, pos.y + 18, pos.y] 
+            }
+          : { rotateZ: 0 }
         return (
           <motion.div
             key={platform.id}
@@ -148,7 +151,7 @@ export default function ContentSplitAnimation() {
               scale: animationState === 'orbit' || animationState === 'settle' ? 1 : 0.2,
               opacity: animationState === 'orbit' || animationState === 'settle' ? 1 : 0,
               x: pos.x,
-              y: pos.y,
+              y: animationState === 'settle' ? undefined : pos.y,
               ...floatAnim
             }}
             transition={{
