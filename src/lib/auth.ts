@@ -28,11 +28,12 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Redirect to dashboard after successful sign-in
-      if (url.startsWith(baseUrl)) {
-        return `${baseUrl}/dashboard`
-      }
-      return baseUrl
+      // Allow explicit callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Redirect to dashboard for OAuth sign-in
+      if (url.startsWith(baseUrl)) return `${baseUrl}/dashboard`
+      // Default redirect to dashboard
+      return `${baseUrl}/dashboard`
     },
   },
   pages: {
